@@ -1,0 +1,124 @@
+<form class="container p-0" [formGroup]="theForm" (submit)="onSubmitInternal()">
+    <div class="mb-2 container p-0">
+        <div class="row p-0" *ngFor="let row of formInputArrangement">
+            <ng-container *ngFor="let item of row">
+                <!-- if it is optional AND its value is blank, don't show it -->
+                <div class="col" *ngIf="!item.optional || (item.optional && item.optional.optionalShown)">
+                    <ng-container *ngLet="theForm.controls[item.name] as control">
+                        <div class="row">
+                            <div class="form-group"
+                                *ngLet="(control.invalid && (control.dirty || control.touched)) as isInvalid">
+                                <label for="{{item.name}}-input">{{item.label}}<span *ngIf="fieldIsRequired(item)"
+                                        class="pb-2">*</span></label>
+                                <!-- not textarea -->
+                                <div class="input-group" *ngIf="item.type != 'textarea'" [class.is-invalid]="isInvalid">
+                                    <!-- not month and not suggestion and not month and not select and not file-->
+                                    <input *ngIf="!item.suggestions && item.type != 'month' && item.type != 'file' && item.type != 'select'"
+                                        type="{{item.type}}" [attr.min]="item.type == 'number' && item.numberMin !== undefined ? item.numberMin : null" [attr.max]="item.type == 'number' && item.numberMax !== undefined ? item.numberMax : null"  [attr.step]="item.type == 'number' && item.numberStep !== undefined ? item.numberStep : null"  class="form-control" [class.is-invalid]="isInvalid"
+                                        id="{{item.name}}-input" formControlName="{{item.name}}">
+                                    <!-- file -->
+                                    <input *ngIf="item.type == 'file'" type="{{item.type}}" class="form-control"
+                                        [class.is-invalid]="isInvalid" id="{{item.name}}-input"
+                                        (change)="control.setValue(toHTMLInputElement($event.target).files)">
+                                    <!-- text and suggestion -->
+                                    <input *ngIf="item.type == 'text' && item.suggestions" type="{{item.type}}"
+                                        class="form-control" [class.is-invalid]="isInvalid" id="{{item.name}}-input"
+                                        formControlName="{{item.name}}"
+                                        [ngbTypeahead]="syncSuggestionsSearch[item.name]" container="body"
+                                        (focus)="item.suggestions.suggestOnFocus && [item.name] && syncSuggestionsFocusEvents[item.name].next($any($event).target.value)"
+                                        (click)="item.suggestions.suggestOnFocus && syncSuggestionsFocusEvents[item.name] && syncSuggestionsFocusEvents[item.name].next($any($event).target.value)">
+                                    <!-- month-year select -->
+                                    <ng-container *ngIf="item.type == 'month'">
+                                        <select class="form-select"
+                                            (change)="setMonthYear(item, monthSelect.value, yearSelect.value)"
+                                            [class.is-invalid]="isInvalid && !(control.value[0] >= 1 && control.value[0] <= 12)"
+                                            [attr.disabled]="control.disabled ? '' : null" #monthSelect>
+                                            <ng-container
+                                                *ngFor="let month of ['Month', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']; let index = index">
+                                                <option [value]="index" [class.placeholder]="index == 0"
+                                                    [attr.selected]="(control.value[0] == index && !control.disabled) || (index == 0 && control.disabled) ? '' : null">
+                                                    {{month}}
+                                                </option>
+                                            </ng-container>
+                                        </select>
+                                        <select class="form-select"
+                                            (change)="setMonthYear(item, monthSelect.value, yearSelect.value)"
+                                            [class.is-invalid]="isInvalid && !(control.value[1] >= 1)"
+                                            [attr.disabled]="control.disabled ? '' : null" #yearSelect>
+                                            <option [value]="0" class="placeholder"
+                                                [attr.selected]="control.value[1] == 0 || control.disabled ? '' : null">
+                                                Year
+                                            </option>
+                                            <ng-container *ngFor="let year of yearArray; let index = index">
+                                                <option [value]="year"
+                                                    [attr.selected]="control.value[1] == year && !control.disabled ? '' : null">
+                                                    {{year}}
+                                                </option>
+                                            </ng-container>
+                                        </select>
+                                    </ng-container>
+                                    <!-- select -->
+                                    <select *ngIf="item.type == 'select'" class="form-select" [class.is-invalid]="isInvalid"
+                                        id="{{item.name}}-input" formControlName="{{item.name}}">
+                                        <ng-container *ngFor="let option of item.selectOptions; let i = index">
+                                            <option [value]="i" [selected]="i == control.value">{{option}}</option>
+                                        </ng-container>
+                                        
+                                    </select>
+                                    <!-- button for removing an optional -->
+                                    <button *ngIf="item.optional" class="btn btn-outline-secondary" type="button"
+                                        (click)="hideOptional(item)"><i class="bi bi-x-circle-fill"></i></button>
+                                </div>
+                                <!-- textarea -->
+                                <textarea *ngIf="item.type == 'textarea'" class="form-control"
+                                    [class.is-invalid]="isInvalid" id="{{item.name}}-input"
+                                    formControlName="{{item.name}}"></textarea>
+                                <div class="invalid-feedback">
+                                    {{control.errors?.["custom"] || item.invalidFeedback}}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" *ngIf="item.defaultCheckbox">
+                            <div class="form-group">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox"
+                                        (change)="setDefaultCheckboxEngaged(item, $event)"
+                                        (load)="testDefaultCheckboxEngaged(item, defaultCheckbox)"
+                                        [attr.checked]="item.defaultCheckbox.checked ? '' : null" #defaultCheckbox>
+                                    <label class="form-check-label">{{item.defaultCheckbox.label}}</label>
+                                </div>
+                            </div>
+                        </div>
+                    </ng-container>
+                </div>
+            </ng-container>
+        </div>
+    </div>
+
+    <div class="form-group mb-2" *ngIf="hasOptionalsToAdd">
+        <div ngbDropdown>
+            <button type="button" class="btn btn-outline-secondary" ngbDropdownToggle>More fields</button>
+            <div ngbDropdownMenu>
+                <ng-container *ngFor="let item of formInput">
+                    <ng-container *ngIf="item.optional && !item.optional.optionalShown">
+                        <!-- the any here is to suppress type warnings about converting between string and number (since item.key is a string, annoyingly) -->
+                        <button type="button" (click)="addOptional(item)" ngbDropdownItem>{{item.label}}</button>
+                    </ng-container>
+                </ng-container>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <button *ngIf="!!submitButtonText" class="btn me-2" [class.btn-primary]="theForm.valid" [class.btn-outline-primary]="theForm.invalid"
+            [attr.disabled]="theForm.disabled ? '' : null" type="submit">
+            {{submitButtonText}}
+        </button>
+        <small>{{formResponseError}}</small>
+    </div>
+</form>
+
+
+<ng-template #monthYearFooter>
+    hi
+</ng-template>
