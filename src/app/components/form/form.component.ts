@@ -68,11 +68,11 @@ export class FormComponent implements OnInit {
      * cross validator to be run after all specific validators are run
      * get each control value by running ctrl.get("ctrlName")
      */
-    @Input() public crossValidator: CrossValidationFn = (_ctrl) => { console.log(_ctrl); return null };
+    @Input() public crossValidator: CrossValidationFn = (_ctrl) => { return null };
     /**
      * text to be displayed on the submit button
      */
-    @Input() public submitButtonText : string | null = "";
+    @Input() public submitButtonText: string | null = "";
     /**
      * set this to display a message next to the submit text
      */
@@ -254,7 +254,6 @@ export class FormComponent implements OnInit {
 
 
     protected setDefaultCheckboxEngaged(item: FormField, evt: Event) {
-        console.log((evt.target as HTMLInputElement).checked);
         if ((evt.target as HTMLInputElement).checked) {
             this.engageDefault(item);
         } else {

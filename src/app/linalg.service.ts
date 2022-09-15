@@ -21,7 +21,7 @@ export class GR {
         this.y = y;
 
         if (m === null) {
-            m  = y.mean();
+            m = y.mean();
         }
 
         this.m = m;
@@ -68,13 +68,10 @@ export class GR {
 }
 
 @Injectable({
-  providedIn: 'root'
+    providedIn: 'root'
 })
 export class LinalgService {
 
-  constructor() {
-    console.log("hello");
-    console.log(Matrix);
-    (window as any).Matrix = Matrix;
-  } 
+    constructor() {
+    }
 }

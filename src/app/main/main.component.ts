@@ -1,6 +1,6 @@
 import { AfterViewChecked, AfterViewInit, Component, OnInit } from '@angular/core';
 import { GR, LinalgService } from '../linalg.service';
-import { Matrix } from "ml-matrix";
+
 import * as c3 from "c3";
 import * as _ from "lodash";
 import * as seedrandom from "seedrandom"
@@ -9,49 +9,106 @@ import * as stat from "simple-statistics"
 import { FormField } from '../components/form/form.component';
 import { FormControl, Validators } from '@angular/forms';
 
-class Example {
-    X: Matrix;
-    y: Matrix;
+declare const Module: any;
 
-    Xt: Matrix;
-    yt: Matrix;
+class MatrixObject {
+    data: Float64Array;
+    rows: number;
+    cols: number;
+
+    constructor(data: Float64Array, rows: number, cols: number) {
+        this.data = data;
+        this.rows = rows;
+        this.cols = cols;
+    }
+
+    static rand(rows: number, cols: number, randFn = Math.random) {
+        const newData = new Float64Array(rows * cols);
+        for (let i = 0; i < rows * cols; ++i) {
+            newData[i] = randFn();
+        }
+
+        return new MatrixObject(newData, rows, cols);
+    }
+
+    static add(a: MatrixObject, b: MatrixObject) {
+        if (a.rows != b.rows || a.cols != b.cols) {
+            throw "Rows and cols must be the same";
+        }
+
+        const newData = new Float64Array(a.rows * a.cols);
+        for (let i = 0; i < a.rows * a.cols; ++i) {
+            newData[i] = a.data[i] + b.data[i];
+        }
+
+        return new MatrixObject(newData, a.rows, a.cols);
+    }
+
+    static range(start: number, end: number, step: number) {
+        const length = Math.floor((end - start) / step) + 1;
+        const newData = new Float64Array(length);
+        newData[0] = start;
+        for (let i = 1; i < length; ++i) {
+            newData[i] = newData[i - 1] + step;
+        }
+
+        return new MatrixObject(newData, length, 1);
+    }
+
+    apply(fn: (x: number) => number): MatrixObject {
+        const newData = new Float64Array(this.data.length);
+
+        for (let i = 0; i < this.data.length; ++i) {
+            newData[i] = fn(this.data[i]);
+        }
+
+        return new MatrixObject(newData, this.rows, this.cols);
+    }
+}
+
+class Example {
+    X: MatrixObject;
+    y: MatrixObject;
+
+    Xt: MatrixObject;
+    yt: MatrixObject;
 
     rng: seedrandom.PRNG;
     yNoiseStd: number;
 
-    constructor(xRange: [number, number], xtRange: [number, number], fn: (X: Matrix) => Matrix, randomX = false, yNoiseStd = 0.0, numPredictions = 10, numXSamples = 10) {
+    constructor(xRange: [number, number], xtRange: [number, number], fn: (x: number) => number, randomX = false, yNoiseStd = 0.0, numPredictions = 10, numXSamples = 10) {
         this.rng = seedrandom(new Date().getTime().toString());
 
-        this.Xt = new Matrix([_.range(xtRange[0], xtRange[1], (xtRange[1] - xtRange[0]) / numPredictions)]).transpose();
-        this.yt = fn(this.Xt);
-
-        this.X = new Matrix([_.range(xRange[0], xRange[1], (xRange[1] - xRange[0]) / numXSamples)]).transpose();
+        this.Xt = MatrixObject.range(xtRange[0], xtRange[1], (xtRange[1] - xtRange[0]) / (numPredictions - 1));
+        this.X = MatrixObject.range(xRange[0], xRange[1], (xRange[1] - xRange[0]) / (numXSamples - 1));
+        this.yt = this.Xt.apply(fn);
 
         this.yNoiseStd = yNoiseStd;
 
         if (randomX) {
-            this.X = Matrix.rand(this.X.rows, this.X.columns, {
-                random: () => {
-                    const max = this.X.max();
-                    const min = this.X.min();
-                    return this.rng() * (max - min) + min;
-                }
+            this.X = MatrixObject.rand(this.X.rows, this.X.cols, () => {
+                const max = xRange[0];
+                const min = xRange[1];
+                return this.rng() * (max - min) + min;
             });
         }
 
-        const noise = Matrix.random(this.X.rows, 1, {
-            random: () => {
-                return yNoiseStd * stat.probit(this.rng());
-            }
-        })
+        const noise = MatrixObject.rand(this.X.rows, 1, () => yNoiseStd * stat.probit(this.rng()));
 
-        this.y = Matrix.add(noise, fn(this.X));
+        this.y = MatrixObject.add(noise, this.X.apply(fn));
     }
 
-    predict(v = 1, l = 1, s: number | null = 0, m: number | null = null) {
-        const gr = new GR(this.X, this.y, v, l, s === null ? this.yNoiseStd : s, m);
+    predict(v = 1, l = 1, s: number | null = 0, m: number | null = null): [MatrixObject, MatrixObject, MatrixObject] {
+        if (m === null) {
+            m = -1;
+        }
 
-        return gr.predict(this.Xt);
+        if (s === null) {
+            s = this.yNoiseStd;
+        }
+
+        const grTest = (window as any).Module.gr(this.X, this.y, this.Xt, v, l, s, m);
+        return [grTest.mean, grTest.covariance, grTest.variance];
     }
 }
 
@@ -59,7 +116,7 @@ interface ExampleParams {
     name: string
     xRange: [number, number],
     xtRange: [number, number],
-    fn: (X: Matrix) => Matrix
+    fn: (x: number) => number
 }
 
 @Component({
@@ -73,12 +130,12 @@ export class MainComponent implements OnInit, AfterViewInit {
             name: "sin(x)",
             xRange: [-Math.PI, Math.PI],
             xtRange: [-4 * Math.PI, 4 * Math.PI],
-            fn: X => Matrix.sin(X),
+            fn: v => Math.sin(v),
         }, {
             name: "exp(x)",
             xRange: [0, 10],
             xtRange: [-2, 12],
-            fn: X => Matrix.exp(Matrix.cos(X)).mul(Matrix.sin(X)),
+            fn: x => Math.exp(x * Math.cos(x)) * Math.sin(x),
         }
     ];
 
@@ -207,10 +264,10 @@ export class MainComponent implements OnInit, AfterViewInit {
         this.drawExample(this.currentExample, prediction);
     }
 
-    drawExample(theExample: Example, prediction: [Matrix, Matrix]) {
+    drawExample(theExample: Example, prediction: [MatrixObject, MatrixObject, MatrixObject]) {
         const samples: plt.Data = {
-            x: theExample.X.getColumn(0),
-            y: theExample.y.getColumn(0),
+            x: theExample.X.data,
+            y: theExample.y.data,
             mode: "markers",
             marker: {
                 color: "#000",
@@ -220,8 +277,8 @@ export class MainComponent implements OnInit, AfterViewInit {
         };
 
         const trueFn: plt.Data = {
-            x: theExample.Xt.getColumn(0),
-            y: theExample.yt.getColumn(0),
+            x: theExample.Xt.data,
+            y: theExample.yt.data,
             mode: "lines",
             line: {
                 color: "#0005",
@@ -233,8 +290,8 @@ export class MainComponent implements OnInit, AfterViewInit {
 
 
         const predictedMean: plt.Data = {
-            x: theExample.Xt.getColumn(0),
-            y: prediction[0].getColumn(0),
+            x: theExample.Xt.data,
+            y: prediction[0].data,
             mode: "lines",
             line: {
                 color: "#00FA",
@@ -245,8 +302,8 @@ export class MainComponent implements OnInit, AfterViewInit {
         };
 
         const confidenceIntervalTop: plt.Data = {
-            x: theExample.Xt.getColumn(0),
-            y: prediction[1].diag().map((v, i) => prediction[0].getColumn(0)[i] + 1.96 * v ** 0.5),
+            x: theExample.Xt.data,
+            y: prediction[2].data.map((v, i) => prediction[0].data[i] + 1.96 * v ** 0.5),
             mode: "lines",
             line: {
                 color: "#00F3",
@@ -258,8 +315,8 @@ export class MainComponent implements OnInit, AfterViewInit {
         };
 
         const confidenceIntervalBottom: plt.Data = {
-            x: theExample.Xt.getColumn(0),
-            y: prediction[1].diag().map((v, i) => prediction[0].getColumn(0)[i] - 1.96 * v ** 0.5),
+            x: theExample.Xt.data,
+            y: prediction[2].data.map((v, i) => prediction[0].data[i] - 1.96 * v ** 0.5),
             mode: "lines",
             line: {
                 color: "#00F3",
@@ -312,7 +369,7 @@ export class MainComponent implements OnInit, AfterViewInit {
     }
 
     protected onHPConfigChange(ctrl: FormControl, redraw = true) {
-        this.currentHPs = [ctrl.get("v")!.value, ctrl.get("l")!.value, ctrl.get("s")!.value === "" ? null : +ctrl.get("s")!.value, ctrl.get("m")!.value === "" ? null : +ctrl.get("m")!.value]
+        this.currentHPs = [+ctrl.get("v")!.value, +ctrl.get("l")!.value, ctrl.get("s")!.value === "" ? null : +ctrl.get("s")!.value, ctrl.get("m")!.value === "" ? null : +ctrl.get("m")!.value]
 
         if (redraw) {
             const prediction = this.currentExample!.predict(...this.currentHPs);
