@@ -1,7 +1,32 @@
-hello
+<div class="container p-0">
+    <div id="chart" [style.display]="this.route.snapshot.queryParamMap.get('main_graph_hidden') ? 'none' : 'block'">
+    </div>
+</div>
 
-<div id="chart"></div>
+<app-form *ngIf="!this.route.snapshot.queryParamMap.get('form_hidden')" [formInput]="sampleConfig" submitButtonText=""
+    [gridArrangement]="formLayout" (onChange)="onSampleConfigChange($event)"></app-form>
 
-<app-form [formInput]="sampleConfig" submitButtonText="" [gridArrangement]="formLayout" (onChange)="onSampleConfigChange($event)"></app-form>
+<app-form *ngIf="!this.route.snapshot.queryParamMap.get('form_hidden')" [formInput]="paramConfig" submitButtonText=""
+    [gridArrangement]="[4]" (onChange)="onHPConfigChange($event)">
+</app-form>
 
-<app-form [formInput]="paramConfig" submitButtonText="" [gridArrangement]="[4]" (onChange)="onHPConfigChange($event)"></app-form>
+<div class="container p-0">
+    <div class="row p-0">
+        <div class="col" *ngIf="!this.route.snapshot.queryParamMap.get('display_samples_hidden')">
+            <div id="chart-2"></div>
+
+            <app-form [formInput]="redrawSamplesFormInput" submitButtonText="Resample"
+                (onSubmit)="displaySamples($event)" [submitButtonInLastRow]="true"></app-form>
+        </div>
+
+
+
+        <div class="col" *ngIf="!this.route.snapshot.queryParamMap.get('std_gp_hidden')">
+            <div id="chart-3"></div>
+
+            <app-form [formInput]="redrawStdGPSamplesFormInput" submitButtonText="Resample"
+                (onSubmit)="displayStdGP($event)" [submitButtonInLastRow]="true">
+            </app-form>
+        </div>
+    </div>
+</div>

@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { LinalgService } from './linalg.service';
+import { WasmService } from './wasm.service';
 
-describe('LinalgService', () => {
-  let service: LinalgService;
+describe('WasmService', () => {
+  let service: WasmService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(LinalgService);
+    service = TestBed.inject(WasmService);
   });
 
   it('should be created', () => {

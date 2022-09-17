@@ -42,6 +42,25 @@ MatrixObject matrixToJSVal(const Eigen::MatrixXd &mat)
     return {data, static_cast<size_t>(mat.rows()), static_cast<size_t>(mat.cols())};
 }
 
+MatrixObject getStdGProcess(const unsigned &numDraws, const unsigned &numDims)
+{
+    return matrixToJSVal(Math::normalRandomVariable(Eigen::VectorXd::Zero(numDims), Eigen::MatrixXd::Identity(numDims, numDims), numDraws));
+}
+
+MatrixObject sampleFromGr(const unsigned &numDraws, const MatrixObject &xIn, const MatrixObject &yIn, const MatrixObject &xtIn, double v = 1.0, double l = 1.0, double s = -1, double m = -1)
+{
+    const auto x = matrixFromJSVal<Eigen::MatrixXd>(xIn);
+    const auto y = matrixFromJSVal<Eigen::VectorXd>(yIn);
+
+    const auto xt = matrixFromJSVal<Eigen::MatrixXd>(xtIn);
+
+    // construct the math class
+    Math::GR regression(x, y, v, l, s, m);
+    const auto res = regression.predict(xt);
+
+    return matrixToJSVal(Math::normalRandomVariable(res.first, res.second, numDraws));
+}
+
 GRResult gr(const MatrixObject &xIn, const MatrixObject &yIn, const MatrixObject &xtIn, double v = 1.0, double l = 1.0, double s = -1, double m = -1)
 {
     const auto x = matrixFromJSVal<Eigen::MatrixXd>(xIn);
@@ -69,4 +88,6 @@ EMSCRIPTEN_BINDINGS(my_module)
         .field("variance", &GRResult::variance);
 
     em::function("gr", &gr);
+    em::function("sampleFromGr", &sampleFromGr);
+    em::function("getStdGProcess", &getStdGProcess);
 }

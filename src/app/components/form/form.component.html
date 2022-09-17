@@ -1,9 +1,10 @@
 <form class="container p-0" [formGroup]="theForm" (submit)="onSubmitInternal()">
     <div class="mb-2 container p-0">
-        <div class="row p-0" *ngFor="let row of formInputArrangement">
+        <div class="row p-0" *ngFor="let row of formInputArrangement; let rowIndex = index">
             <ng-container *ngFor="let item of row">
                 <!-- if it is optional AND its value is blank, don't show it -->
-                <div class="col" *ngIf="!item.optional || (item.optional && item.optional.optionalShown)">
+                <div class="col"
+                    *ngIf="!item.hidden && (!item.optional || (item.optional && item.optional.optionalShown))">
                     <ng-container *ngLet="theForm.controls[item.name] as control">
                         <div class="row">
                             <div class="form-group"
@@ -13,9 +14,14 @@
                                 <!-- not textarea -->
                                 <div class="input-group" *ngIf="item.type != 'textarea'" [class.is-invalid]="isInvalid">
                                     <!-- not month and not suggestion and not month and not select and not file-->
-                                    <input *ngIf="!item.suggestions && item.type != 'month' && item.type != 'file' && item.type != 'select'"
-                                        type="{{item.type}}" [attr.min]="item.type == 'number' && item.numberMin !== undefined ? item.numberMin : null" [attr.max]="item.type == 'number' && item.numberMax !== undefined ? item.numberMax : null"  [attr.step]="item.type == 'number' && item.numberStep !== undefined ? item.numberStep : null"  class="form-control" [class.is-invalid]="isInvalid"
-                                        id="{{item.name}}-input" formControlName="{{item.name}}">
+                                    <input
+                                        *ngIf="!item.suggestions && item.type != 'month' && item.type != 'file' && item.type != 'select'"
+                                        type="{{item.type}}"
+                                        [attr.min]="item.type == 'number' && item.numberMin !== undefined ? item.numberMin : null"
+                                        [attr.max]="item.type == 'number' && item.numberMax !== undefined ? item.numberMax : null"
+                                        [attr.step]="item.type == 'number' && item.numberStep !== undefined ? item.numberStep : null"
+                                        class="form-control" [class.is-invalid]="isInvalid" id="{{item.name}}-input"
+                                        formControlName="{{item.name}}">
                                     <!-- file -->
                                     <input *ngIf="item.type == 'file'" type="{{item.type}}" class="form-control"
                                         [class.is-invalid]="isInvalid" id="{{item.name}}-input"
@@ -58,12 +64,13 @@
                                         </select>
                                     </ng-container>
                                     <!-- select -->
-                                    <select *ngIf="item.type == 'select'" class="form-select" [class.is-invalid]="isInvalid"
-                                        id="{{item.name}}-input" formControlName="{{item.name}}">
+                                    <select *ngIf="item.type == 'select'" class="form-select"
+                                        [class.is-invalid]="isInvalid" id="{{item.name}}-input"
+                                        formControlName="{{item.name}}">
                                         <ng-container *ngFor="let option of item.selectOptions; let i = index">
                                             <option [value]="i" [selected]="i == control.value">{{option}}</option>
                                         </ng-container>
-                                        
+
                                     </select>
                                     <!-- button for removing an optional -->
                                     <button *ngIf="item.optional" class="btn btn-outline-secondary" type="button"
@@ -92,6 +99,23 @@
                     </ng-container>
                 </div>
             </ng-container>
+
+            <div class="col"
+                *ngIf="rowIndex == formInputArrangement.length - 1 && !!submitButtonText && submitButtonInLastRow">
+                <div class="row">
+                    <div class="form-group">
+                        <label class="d-block">&nbsp;</label>
+                        <button *ngIf="!!submitButtonText" class="btn me-2" [class.btn-primary]="theForm.valid"
+                            [class.btn-outline-primary]="theForm.invalid" [attr.disabled]="theForm.disabled ? '' : null"
+                            type="submit">
+                            {{submitButtonText}}
+                        </button>
+                        <!-- <label>hi</label>
+                        <input type="text" class="form-control">
+                        <small>{{formResponseError}}</small> -->
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -110,7 +134,8 @@
     </div>
 
     <div class="form-group">
-        <button *ngIf="!!submitButtonText" class="btn me-2" [class.btn-primary]="theForm.valid" [class.btn-outline-primary]="theForm.invalid"
+        <button *ngIf="!!submitButtonText && !submitButtonInLastRow" class="btn me-2"
+            [class.btn-primary]="theForm.valid" [class.btn-outline-primary]="theForm.invalid"
             [attr.disabled]="theForm.disabled ? '' : null" type="submit">
             {{submitButtonText}}
         </button>

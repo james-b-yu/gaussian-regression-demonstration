@@ -44,6 +44,8 @@ export interface FormField {
     numberMin?: number;
     numberMax?: number;
     numberStep?: number;
+
+    hidden?: boolean;
 }
 
 @Component({
@@ -77,12 +79,19 @@ export class FormComponent implements OnInit {
      * set this to display a message next to the submit text
      */
     @Input() public formResponseError = "";
+
+    /**
+     * put submit button in last row
+     */
+    @Input() public submitButtonInLastRow = false;
+
     /**
      * event to be emitted when the submit button is pressed
      */
     @Output() public onSubmit = new EventEmitter();
 
     @Output() public onChange = new EventEmitter();
+
 
     protected formInputArrangement: FormField[][] = [];
 

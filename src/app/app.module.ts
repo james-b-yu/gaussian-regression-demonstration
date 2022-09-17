@@ -10,19 +10,19 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { NgLetModule } from 'ng-let';
 
 @NgModule({
-  declarations: [
-    AppComponent,
-    FormComponent,
-    MainComponent
-  ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule,
-    NgbModule,
-    ReactiveFormsModule,
-    NgLetModule
-  ],
-  providers: [],
-  bootstrap: [AppComponent]
+    declarations: [
+        AppComponent,
+        FormComponent,
+        MainComponent,
+    ],
+    imports: [
+        BrowserModule,
+        AppRoutingModule,
+        NgbModule,
+        ReactiveFormsModule,
+        NgLetModule
+    ],
+    providers: [],
+    bootstrap: [AppComponent]
 })
 export class AppModule { }

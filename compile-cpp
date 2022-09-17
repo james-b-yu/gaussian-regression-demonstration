@@ -1,1 +1,1 @@
-emcmake cmake -B ./build-wasm && cd build-wasm && EMCC_DEBUG=1 make && cp ./gr.js ../src/cpp/gr.js && cp ./gr.wasm ../src/cpp/gr.wasm
+emcmake cmake -B ./build-wasm && cd build-wasm && make && cp ./gr.js ../src/cpp/gr.js && cp ./gr.wasm ../src/cpp/gr.wasm

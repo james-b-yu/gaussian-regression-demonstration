@@ -1,0 +1,244 @@
+# A Short Introduction to Gaussian Regression
+Gaussian regression is a popular method of regression employed widely in statistical analysis and machine learning, converging with far fewer observations than traditional methods of regression. Adopting the Bayesian approach to regression, Gaussian regression is able to produce confidence intervals around its predictions, and can fit complex functions that are otherwise not easily modelled.
+
+This article will give a short mathematical introduction to Gaussian regression, first laying down the key mathematical concepts, before diving into a mathematical exposition complete with demonstrations.
+
+# Mathematical Prelimimaries
+## The Multivariate Normal Distribution
+We've all seen the univariate normal distribution: from modelling the weight of apples to predicting the failure rate of machines, this bell-shaped curve is familar to anyone who has gone through the pain of high-school statistics classes.
+
+Gaussian regression relys on an extension of the normal distribution to multiple dimensions. **The multivariate normal distribution** describes the joint probability distribution of a _vector_ (think of it as an ordered list or collection) of \(n\) random variables \(y_{1}, y_{2}, \ldots, y_{n}\) which forms a **random vector** \(\vb{y}\) with mean \(\boldsymbol{\mu} \in \mathbb{R}^{n}\) and covariance matrix \(\boldsymbol{\Sigma} \in \mathbb{R}^{n \times n}\).
+
+This **covariance matrix** \(\boldsymbol{\Sigma}\) is formed such that \(\Sigma_{i,j} = \operatorname{Cov}\qty(y_{i}, y_{j})\). This means that the items \(\Sigma_{i,i}\) along the diagonal of this matrix denote the variance of \(y_{i}\). The covariance matrix has the property that it is **symmetric and positive semidefinite**, since \(\operatorname{Cov}\qty(y_{i}, y_{j}) \equiv \operatorname{Cov}\qty(y_{j}, y_{i})\) and we assume that \(\forall (i, j), \operatorname{Cov}\qty(y_{i}, y_{j}) > 0\).
+
+If \(\vb{y}\) follows a multivariate normal distribution with mean \(\boldsymbol{\mu}\) and covariance \(\boldsymbol{\Sigma}\), we write:
+\[
+\vb{y} \sim \mathcal{N}(\boldsymbol{\mu}, \boldsymbol{\Sigma}) = \frac{1}{(2\pi)^{\frac{n}{2}}\sqrt{\abs{\boldsymbol{\Sigma}}}} \exp\qty(-\frac{1}{2}(\vb{x} - \boldsymbol{\mu})^{T} \boldsymbol{\Sigma}^{-1} (\vb{x} - \boldsymbol{\mu})).
+\]
+
+Notice the appearance of the quantity \(\boldsymbol{\Sigma}^{-1}\) within the exponential. The inverse of the covariance matrix is the **precision matrix** \(\mathbf{P}\), which describes how likely it is to find the random vector *close* to its mean, rather than further away.
+
+The multivariate normal distribution has the property that, given the random vector \(\vb{y}\), each subvector of \(s < n\) random variables \(\tilde{\vb{y}} \equiv [y_{1}, \ldots, y_{s}]^{T}\) also follows a multivariate normal distribution. Namely, with mean \(\tilde{\boldsymbol{\mu}} \equiv [\mu_{1}, \ldots, \mu_{s}]^{T}\) and covariance matrix \(\tilde{\boldsymbol{\Sigma}}\) defined as the upper-left \(s \times s\) submatrix of \(\boldsymbol{\Sigma}\).
+
+## Gaussian Processes
+A Gaussian process takes the idea of a multivariate normal distribution and extends it into *infinite* dimensions to create the notion of a **random function**. Rather than having just \(n\) random variables \(y_{i}\) indexed by the integer \(i\), we have an infinite collection of random variables \(y \equiv f(\vb{x})\) , indexed by **vector** \(\vb{x}\) in input space \(\mathbb{R}^{d}\). Just like how a normal function takes an input in its domain and gives out a value, this random function \(f(\vb{x})\) takes the input \(\vb{x}\) and gives a *random variable*:
+\[
+    f(\vb{x}) \sim \mathcal{GP}(m(\vb{x}), k(\vb{x}, \vb{x}')).
+\] 
+The function \(m(\vb{x})\) is a **mean function**, which gives the mean of the random variable indexed at \(\vb{x}\), while \(k(\vb{x}, \vb{x}')\) is a **kernel function**, which gives the covariance between the random variables at \(\vb{x}\) and \(\vb{x}'\). Note that we are referring to the random variables \(f(\vb{x})\) and \(\vb{x}'\) *indexed* by \(\vb{x}\) and \(\vb{x}'\), not the vectors themselves, which are not random:
+\[
+    k(\vb{x}, \vb{x}') \equiv \operatorname{Cov}\qty(f(\vb{x}), f(\vb{x}')). 
+\]
+
+Below are two examples of Gaussian processes with different mean and covariance functions. Have a go at clicking the "resample" button to see new realisations of the same Gaussian process!
+
+The Gaussian process is defined such that every *finite collection* of random variables follows a multivariate normal distribution. Suppose we choose two samples of \(f\), evaluated at \(\vb{x}_{1}\) and \(\vb{x}_{2}\), to give \(f_{1} \equiv f(\vb{x}_{1})\) and \(f_{2} \equiv f(\vb{x}_{2})\), then it must be true that
+\[
+    \mqty[f_{1} \\ f_{2}] \sim \mathcal{N}\qty(\mqty[m(\vb{x}_{1}) \\ m(\vb{x}_{2})], \mqty[k(\vb{x}_{1}, \vb{x}_{1}) & k(\vb{x}_{1}, \vb{x}_{2}) \\ k(\vb{x}_{2}, \vb{x}_{1}) & k(\vb{x}_{2}, \vb{x}_{2})]).
+\]
+
+Since this relationship is true for *any* finite collection of random variables, it is also true if we take \(n\) samples of \(f\), at \(\vb{x}_{1}, \ldots, \vb{x}_{n}\) and record the corresponding values \(f_{1} \equiv f(\vb{x}_{1}), \ldots, f_{n} \equiv f(\vb{x}_{n})\). For conciseness of notation, let us stack these values of \(f_{i}\) into a vector \(\vb{f} \in \mathbb{R}^{n}\), and stack each *transposed* vector \(\vb{x}_{i}^{T}\) to create a matrix \(\mathbf{X} \in \mathbb{R}^{n \times d}\):
+\[
+    \vb{f} \sim \mathcal{N}(\vb{m}(\mathbf{X}), \mathbf{K}(\mathbf{X})),
+\]
+where the mean vector \(\vb{m}\) is defined such that \(m_{i} \equiv m(\vb{x}_{i})\), and the kernel matrix \(\mathbf{K}\) such that \(K_{i,j} \equiv k(\vb{x}_{i}, \vb{x}_{j})\).
+
+## Bayesian Updating
+Gaussian regression is done by applying the basic framework of Bayesian inference. For a quick refresher, suppose we have a hypothesis \(H\) and evidence \(E\). The probability that the hypothesis is true based on seeing the evidence is given by Bayes' rule:
+\[
+    P(H \mid E) = \frac{P(E \mid H) P(H)}{P(E)} = \frac{P(E \cap H)}{P(E)},
+\]
+where \(P(E) = \sum_{\mathcal{H}} P(E \mid H) P(H)\) is the marginal probability of observing the evidence \(E\) over all possible hypotheses. This allows us to update our **prior** \(P(H)\) that the hypothesis \(H\) is true, based on the evidence, to create a **posterior** \(P(H \mid E)\).
+
+How does this apply to our Gaussian process? Suppose we observe a sequence of \(n\) inputs \(\vb{x}_{1}, \ldots, \vb{x}_{n}\)  which make up the matrix \(\mathbf{X}\), called a **design matrix**, and \(n\) corresponding outputs \(y_{1}, \ldots, y_{n}\) which make up the vector \(\vb{y}\). The evidence is defined as the event that \(\vb{f}(\mathbf{X}) = \vb{y}\), ie. the random function evaluated at each \(\vb{x}_{i}\) is equal \(y_{i}\). We will write the probability density of this event \(P(\vb{f}(\mathbf{X}) = \vb{y})\) more concisely as \(p(\vb{y})\).
+
+Suppose further that we would like to predict the value of \(f\) for a list of \(m\) unobserved points \(\vb{x}^*_{1}, \ldots, \vb{x}^*_{m}\) making up design matrix \(\mathbf{X}^*\). Our hypothesis then becomes the event that the function at each of these points equals a given value \(\vb{y}^*\). Again, we write the probability density \(P(\vb{f}(\mathbf{X}^*) = \vb{y}^*)\) more concisely as \(p(\vb{y}^*)\).
+
+Applied to this context, Bayes' rule becomes:
+\[
+    p(\vb{y}^* \mid \vb{y}) = \frac{p(\vb{y} \mid \vb{y}^*)p(\vb{y}^*)}{p(\vb{y})} = \frac{p(\vb{y}, \vb{y}^*)}{p(\vb{y})}. \label{bayes-post}
+\]
+
+Since \(f(\vb{x})\) is a Gaussian process, we know that samples of \(f\) at \(\vb{x}_{1}, \ldots, \vb{x}_{n}\) and \(\vb{x}^*_{1}, \ldots, \vb{x}^*_{n}\) must satisfy a multivariate normal distribution. Let us define a matrix \(\hat{\mathbf{X}}\) formed by stacking all \(n\) values of \(\vb{x}\) on top of all \(m\) values of \(\vb{x}^*\). Let us then define the vector \(\hat{\vb{f}}\) formed by stacking the corresponding values of \(f\). Then it must be true that
+\[
+    \hat{\vb{f}} \sim \mathcal{N}(m(\hat{\mathbf{X}}), \mathbf{K}(\hat{\mathbf{X}})). \label{bayesian-prior}
+\]
+
+Unlike with normal Bayesian inference where the inference is done on *parameters* which make up a function, Gaussian regression infers the *outcome* of the function itself.
+
+This leaves us with a problem: how do we find out the mean function \(m(\vb{x})\) and the kernel function \(k(\vb{x}, \vb{x}')\)? These functions are chosen *before* we do the inference and are assumed true throughout. We will explore how these assumptions impact our final predictions later on.
+
+The mean function is commonly taken as a constant, either 0 or the average of the observed values of \(y\). In this article, we will use the latter, defining \(\mu \equiv \sum_{i=1}^{n} y_{i}\). The vector \(\hat{\boldsymbol{\mu}}\) is simply a vector with every entry equal to this constant \(\mu\).
+
+On the other hand, the kernel function is chosen from a collection of commonly-used functions. The most popular kernel function is the **radial basis function** (RBF), which approaches \(1\) when the two points \((\vb{x}, \vb{x}')\) are closer together and dips towards \(0\) as the points get further apart:
+\[
+    k(\vb{x}, \vb{x}') \equiv a^{2} \exp\qty(-\frac{\norm{\vb{x} - \vb{x}'}^{2}}{b^{2}}).
+\]
+Note that the RBF itself comes with two parameters \(a\) and \(b\), which we will explore later.
+
+The RBF coupled with a constant mean \(\mu\) has the special property that forces continuity, and ensures that predicted points will always pass through points in the dataset \(\mathbf{X}, \vb{y}\). This is due to the fact that, as two input points \((\vb{x}, \vb{x}')\)  become infinitessimally close together, the covariance \(\operatorname{Cov}\qty(f(\vb{x}), f(\vb{x}'))\) approaches 1, meaning that for any single sampled function, the sample evaluated at these points they must deviate by exactly the same amount away from \(\mu\).
+
+## Calculating the Joint Probability
+Turning back to [#bayesian-prior], it would be much easier to get our end-goal of finding the probability density \(p(\vb{y}^* \mid \vb{y})\) if we split the vectors and matrices into variables from our dataset, and variables we are predicting. Rather than stacking all the variables together, we can write \(\hat{\vb{f}} = [\vb{f}, \vb{f}^*]^{T}\), where \(\vb{f}\) is the vector of function values evaluated at each row of the observed data \(\mathbf{X}\), while \(\vb{f}^*\) contains the function values evaluated at each row of test data \(\mathbf{X}^*\). Similarly, we can split the covariance matrix \(\mathbf{K}(\hat{\mathbf{X}})\) into four matrices \(\mathbf{K}(\mathbf{X}, \mathbf{X}), \mathbf{K}(\mathbf{X}, \mathbf{X}^*), \mathbf{K}(\mathbf{X}^*, \mathbf{X})\) and \(\mathbf{K}(\mathbf{X}^*, \mathbf{X}^*)\), which we will label \(\mathbf{K}_{1}\) up to \(\mathbf{K}_{4}\). To make the following matrix algebra easier, we also split the \(\hat{\boldsymbol{\mu}}\) vector into vectors \(\boldsymbol{\mu}\) and \(\boldsymbol{\mu}^*\), which are vectors of dimension \(n\) and \(m\) respecitively, filled with the value \(\mu\).
+\[
+    \mqty[\vb{f} \\ \vb{f}^*] \sim \mathcal{N}\qty(\mqty[\boldsymbol{\mu} \\ \boldsymbol{\mu}^*], \mqty[\mathbf{K}_{1} & \mathbf{K}_{2} \\ \mathbf{K}_{3} & \mathbf{K}_{4}]). \label{joint-probability}
+\]
+
+Let's look back at [#bayes-post]. It is easier to evaluate expression on the right as it is simply the quotient of the joint density \((\vb{y}, \vb{y}^*)\) and the marginal density of observing \(\vb{y}\). We can simplify it further by noting that our goal, the posterior predictive distribution \(p(\vb{y}^* \mid \vb{y})\) is a probability density in \(\vb{y}^*\). This means that it is a function in \(\vb{y}^*\) and must integrate to 1 over all possible values of \(\vb{y}^*\). Here, we can apply a trick: since we know that it must integrate to 1, we only need to account for what it is *proportional to* as \(\vb{y}^*\) changes. This means that we can drop the factor \(\frac{1}{p(\vb{y})}\) and define the constant \(\alpha\) as the constant which allows the final result to integrate to 1:
+\[
+    y(\vb{y}^* \mid \vb{y}) = \alpha p(\vb{y}, \vb{y}^*).
+\]
+
+Using [#joint-probability], we can now proceed to write out the joint probability \(p(\vb{y}, \vb{y}^*)\) in full. Remember that first, we must define a precision matrix \(\mathbf{P}\) which lies in the exponential term of the expression.
+
+In fact, it makes sense to partition \(\mathbf{P}\) in a similar way to how the covariance matrix is partitioned, by defining four submatrices \(\mathbf{A} \in \mathbb{R}^{n \times n}, \mathbf{B} \in \mathbb{R}^{n \times m}, \mathbf{C} \in \mathbb{R}^{m \times n}, \mathbf{D} \in \mathbb{R}^{m \times m}\) such that:
+\[
+\mathbf{P} = \mqty[\mathbf{A} & \mathbf{B} \\ \mathbf{C} & \mathbf{D}] = \mqty[\mathbf{K}_{1} & \mathbf{K}_{2} \\ \mathbf{K}_{3} & \mathbf{K}_{4}]^{-1}.
+\]
+
+Don't worry about the actual forms of these submatrices yet --- we'll cross that bridge when we get there! Note for now that, since the covariance matrix is symmetric, its inverse, the precision matrix, is also symmetric. This means that \(\mathbf{B} \equiv \mathbf{C}^{T}\) and \(\mathbf{A} = \mathbf{A}^{T}\) and \(\mathbf{D} = \mathbf{D}^{T}\).
+
+Applying the definition of the multivariate normal distribution, the posterior predictive distribution can now be written as:
+\[
+p(\vb{y}^* \mid \vb{y}) = \alpha \exp\qty(-\frac{1}{2} \mqty[\qty(\vb{y} - \boldsymbol{\mu})^{T} & \qty(\vb{y}^* - \boldsymbol{\mu}^*)^{T}] \mqty[\mathbf{A} & \mathbf{C}^{T} \\ \mathbf{C} & \mathbf{D}] \mqty[\vb{y} - \boldsymbol{\mu} \\ \vb{y}^* - \boldsymbol{\mu}^*]),
+\]
+where we have absorbed the constant \(\frac{1}{(2\pi)^{\frac{m+n}{2}}\abs{\boldsymbol{\Sigma}}}\) into the constant \(\alpha\). To proceed let's take the substitutions \(\vb{z} \equiv \vb{y} - \boldsymbol{\mu}\) and \(\vb{z}^* \equiv \vb{y}^* - \boldsymbol{\mu}^*\) before performing the matrix multiplication:
+
+\[
+p(\vb{y}^* \mid \vb{y}) &= \alpha \exp\qty(-\frac{1}{2} \qty( \vb{z}^{T}\mathbf{A}\vb{z} + 2 \vb{z}^{T} \mathbf{C}^{T} {\vb{z}^*} + {\vb{z}^*}^{T} \mathbf{D} \vb{z}^*)) \\
+&= \alpha \exp\qty(-\frac{1}{2} \qty(2 \vb{z}^{T} \mathbf{C}^{T} {\vb{z}^*} + {\vb{z}^*}^T \mathbf{D} \vb{z}^*)) \underbrace{\exp\qty(-\frac{1}{2} \vb{z}^{T}\mathbf{A}\vb{z})}_{\text{a constant}}.
+\]
+
+Again, since the expression \(\vb{z}^{T}\mathbf{A}\vb{z}\) is independent of \(\vb{y}^*\), we can absorb it into \(\alpha\) as it becomes a multiplicative constant.
+
+Now notice that the expression \({{\vb{z}^*}^{T} \mathbf{D}} \vb{z}^* + 2\vb{z}^{T} \mathbf{C}^{T} \vb{z}^*\) can be rewritten by completing the square in \(\vb{z}^*\):
+\[
+{\vb{z}^*}^T \mathbf{D} \vb{z}^* + 2\vb{z}^{T} \mathbf{C}^{T}\vb{z}^* = (\vb{z}^* + \mathbf{D}^{-1}\mathbf{C}\vb{z})^{T}\mathbf{D}(\vb{z}^* + \mathbf{D}^{-1}\mathbf{C}\vb{z}) - \vb{z}^{T}\mathbf{C}^{T}\mathbf{D}^{-1}\mathbf{C}\vb{z}.
+\]
+
+The final scalar term \(\vb{z}^{T}\mathbf{C}^{T}\mathbf{D}^{-1}\mathbf{C}\vb{z}\) is yet another a multiplicative constant in the exponential so can be absorbed too. This leaves us with
+\[
+\require{mathtools} p(\vb{y}^* \mid \vb{y}) &= \alpha \exp\qty(-\frac{1}{2}(\vb{z}^* + \mathbf{D}^{-1}\mathbf{C}\vb{z})^{T}\mathbf{D}(\vb{z}^* + \mathbf{D}^{-1}\mathbf{C}\vb{z})) \\
+&= \alpha \exp\qty(-\frac{1}{2}(\vb{y}^* - \underbrace{(\boldsymbol{\mu}^* - \mathbf{D}^{-1}\mathbf{C}(\vb{y} - \boldsymbol{\mu}))}_{\mathrm{mean}})^{T} \overbrace{\mathbf{D}}^{\mathclap{\mathrm{precision}}}(\vb{y}^* - \underbrace{(\boldsymbol{\mu}^* -  \mathbf{D}^{-1}\mathbf{C}(\vb{y} - \boldsymbol{\mu}))}_{\mathrm{mean}})).
+\]
+
+This is simply another normal distribution! This posterior predictive distribution has covariance matrix \(\mathbf{D}^{-1}\) and mean \(\boldsymbol{\mu}^* - \mathbf{D}^{-1}\mathbf{C}(\vb{y} - \boldsymbol{\mu})\).
+
+This is great, but it would be much nicer to express the terms \(\mathbf{D}^{-1}\) and \(\mathbf{C}\) in terms of the original covariance matrices \(\mathbf{K}_{1}\), etc. Luckily, we can use the formula given in [#thm-block-inversion] to find that \(\mathbf{D}^{-1} \equiv \mathbf{K}_{4} - \mathbf{K}_{3}\mathbf{K}_{1}^{-1}\mathbf{K}_{2}\) and \(\mathbf{D}^{-1}\mathbf{C} \equiv -\mathbf{K}_{3}\mathbf{K}_{1}^{-1}\).
+
+We obtain a final expression for the posterior predictive distribution:
+
+\[
+p(\vb{y}^* \mid \vb{y}) = \mathcal{N}\qty({\mathrm{mean} = \boldsymbol{\mu}^* + \mathbf{K}_{3}\mathbf{K}_{1}^{-1}(\vb{y} - \boldsymbol{\mu}), \mathrm{covariance} = \mathbf{K}_{4} - \mathbf{K}_{3}\mathbf{K}_{1}^{-1}\mathbf{K}_{2}}). \label{post-predictive-dist}
+\]
+
+If we are only predicting a single \(y^*\) value for a single input \(\vb{x}^*\), we can define a vector \(\vb{k}^* \equiv \mqty[k(\vb{x}^*, \vb{x}_{1}) & k(\vb{x}^*, \vb{x}_{2}) & \cdots & k(\vb{x}^*, \vb{x}_{n})]^{T}\) and rewrite its posterior predictive distribution as a scalar normal distribution:
+\[
+p(y^* \mid \vb{y}, \mathbf{X}, \mathbf{X}^*) = \mathcal{N}\qty(\mathrm{mean} = {\mu + {\vb{k}^*}^{T}(\mathbf{K}_{1})^{-1}(\vb{y} - \boldsymbol{\mu}),
+\mathrm{variance} = 1 - {\vb{k}^*}^{T}(\mathbf{K}_{1})^{-1}\vb{k}^*}). \label{no-noise-posterior}
+\]
+
+A posterior distribution of potential function values is cool, but what if all we want is a single point estimate of the function at a given point \(\vb{x}^*_{i}\)? For this, we can use a technique called **maximum a posterior estimation**, which takes the **mode** (point with the highest probability density) of the posterior predictive distribution as the point estimate. Since our function values are normally distributed, the mode is also the mean, allowing us to use the mean \(\mu + {\vb{k}^*}^{T}\mathbf{K}_{1}^{-1}(\vb{y} - \boldsymbol{\mu})\) as the point estimate. 
+
+Have a look at the demonstration below and experiement by varying the prior mean \(\mu\). The graph shows the MAP estimate along with a 95% confidence interval of a Gaussian regression using samples from a given function. Notice how the regression performs well for interpolation, approximating the function well with relatively few samples, but falls off rapidly when extrapolating. In fact, for points "far" away from points in the dataset \(\mathbf{X}\), Gaussian regression simply tends towards the assumed mean \(\boldsymbol{\mu}\).
+
+
+## Relationship between predictions and the dataset
+Looking at this expression alone, it may seem that the posterior mean is linear in and therefore is very sensitive to prior assumptions \(\boldsymbol{\mu}^*\) and \(\boldsymbol{\mu}\). However, remember that these mean vectors are usually taken as vectors filled with the same number, either \(0\) or the mean of the \(y\) values of the dataset. In this case, we can rewrite \(\boldsymbol{\mu}^*\) and \(\boldsymbol{\mu}\) as the vector \(\mu \vb{1}_{m}\) and \(\mu \vb{1}_{n}\) respectively, where \(\vb{1}_{(\cdot)}\) is a vector of 1s at the appropriate dimension. Taking the derivative of the mean can help us conceptualise how big of an impact the prior mean \(\mu\) actually has on the posterior predictive distribution:
+\[
+\dv{\mu}\qty(\mu \vb{1}_{m} + \mathbf{K}_{3} \mathbf{K}_{1}^{-1}(\vb{y} - \mu \vb{1}_{n})) &= \dv{\mu}\qty(\mu(\vb{1}_{m} - \mathbf{K}_{3}\mathbf{K}_{1}^{-1} \vb{1}_{n})) \\
+&= \dv{\mu}\qty(\mu(\mathbf{I} - \mathbf{K}_{3}\mathbf{K}_{1}^{-1})\vb{1}_{m}) \\
+&= (\mathbf{I} - \mathbf{K}_{3}\mathbf{K}_{1}^{-1})\vb{1}_{m}.
+\]
+
+This expression states that the magnitude of the derivative decreases as the unseen values \(\mathbf{X}^*\) become closer to the dataset design matrix \(\mathbf{X}\). In the extreme case where \(\mathbf{K}_{3} = \mathbf{K}_{1}\) and all the predictions are based off values of \(\vb{x}\) that the model has already seen, the derivative becomes \(\vb{0}\) and the prior has no influence on the predictive posterior mean. The model simply returns values of \(\vb{y}\) corresponding to those values of \(\vb{x}\) in the dataset. The more similar \(\mathbf{x}^*\) values are to those seen in the dataset, the less influence the prior has on the prediction.
+
+Similarly, notice how the covariance is given by an initial level of uncertainty \(\mathbf{K}_{4}\), minus a quantity \(\mathbf{K}_{3}\mathbf{K}_{1}^{-1}\mathbf{K}_{2}\) which represents the amount of uncertainty reduced by the dataset. This reduction in uncertainty is larger when the unobserved points \(\mathbf{X}^*\) are closer to the observed points \(\mathbf{X}\). In the extreme case where \(\mathbf{X}^* = \mathbf{X}\) and \(\mathbf{K}_{1} = \mathbf{K}_{2} = \mathbf{K}_{3} = \mathbf{K}_{4}\), the covariance matrix would evaluate to \(\mathbf{0}\), indicating that we know the values deterministically. For the same reason, the posterior predictive distribution passes through and has 0 variance at points that were in the original dataset \((\mathbf{X}, \vb{y})\).
+
+Uncertainty is also smaller when the the dataset \(\mathbf{X}\) is larger: assuming that the domain from which \(\vb{x}\) is sampled from is unchanged, more observations mean that the average distance between a test datapoint and the closest observed datapoint is smaller.
+
+## Adding noise to data values
+Often when we have a dataset of \(\vb{x}\)s and \(y\)s, randomness in the data collection process leads to noise in the data which precludes us from concluding deterministically that \(f(\vb{x}_{i}) = y_{i}\) for some observation \((\vb{x}_{i}, y_{i})\). Noise in the dataset also means that it may be undesirable for predictions to pass directly through the points in the dataest.
+
+In this case, we can assume that our collected data follows the relationship
+\[
+\forall i \in \qty{1, ..., n},   y_{i} = f(\vb{x}_{i}) + \varepsilon_i \qcomma \varepsilon_i \sim \mathcal{N}(0, \sigma^{2}).
+\] 
+
+To modify the model to accommodate this assumption, all we have to do is add a diagonal matrix \(\boldsymbol{\Sigma}_{n} \equiv \sigma^{2} \mathbf{I}\) to \(\mathbf{K}_{1}\) and which captures this uncertainty. Note that we do not add it to \(\mathbf{K}_{4}\), since we are only assuming that the observations in the _dataset_ are noisy.
+
+The joint distribution between the observed and predicted values is now:
+\[
+\mqty[\vb{y} \\ \vb{y}^*] \sim p(\vb{y}, \vb{y}^* \mid \mathbf{X}, \vb{y}, \mathbf{X}^*) = \mathcal{N}\qty(\mqty[\boldsymbol{\mu} \\ \boldsymbol{\mu}^*], \mqty[\mathbf{K}_{1} + \boldsymbol{\Sigma}_n & \mathbf{K}_{2} \\ \mathbf{K}_{3} & \mathbf{K}_{4}]),
+\]
+and the posterior predictive distribution (by adding \(\boldsymbol{\Sigma}_{n}\) to every occurance of \(\mathbf{K}_{1}\) in [#post-predictive-dist]) is now:
+\[
+p(\vb{y}^* \mid \vb{y}) = \mathcal{N}\qty(\mathrm{mean} = {\boldsymbol{\mu}^* + \mathbf{K}_{3}(\mathbf{K}_{1} + \boldsymbol{\Sigma}_{n})^{-1}(\vb{y} - \boldsymbol{\mu}),
+\mathrm{covariance} = \mathbf{K}_{4} - \mathbf{K}_{3}(\mathbf{K}_{1} + \boldsymbol{\Sigma}_{n})^{-1}\mathbf{K}_{2}}),
+\]
+or in the case of only predicting one \(y^*\) value,
+\[
+p(y^* \mid \vb{y}, \mathbf{X}, \mathbf{X}^*) = \mathcal{N}\qty(\mathrm{mean} = {\mu + {\vb{k}^*}^{T}(\mathbf{K}_{1} + \boldsymbol{\Sigma}_{n})^{-1}(\vb{y} - \boldsymbol{\mu}),
+\mathrm{variance} = 1 - {\vb{k}^*}^{T}(\mathbf{K}_{1} + \boldsymbol{\Sigma}_{n})^{-1}\vb{k}^*}). \label{noisy-posterior}
+\]
+
+Adding this noise now no longer guarantees the predictions to pass through points in the dataset, but also means that the model doesn't overfit to patterns in the data that are only due to noise.
+
+Experiment using the demonstration below by computationally adding noise to the sampled function values, and by varying the assumed level of noise \(\sigma\). Notice how even adding a little bit of noise in the samples while keeping \(\sigma\) at 0, the regression overfits as it forces all of its points to pass through noisy samples, rather than trying to learn the underlying function. By matching the \(\sigma\) with the actual level of noise, the model no longer forces points through its samples and gives you a result much closer to the actual function. Note however, that in real life, we won't know the actual level of noise, so will have to choose a \(\sigma\), a hyperparameter, that we feel is most "correct". We explore how hyperparameters like this could be chosen below.
+
+## Determining the Hyperparameters
+Our model has four hyperparameters \((\mu, \sigma, a, b)\) which we must determine before running the regression. While we have explored the impact of \(\mu\) and \(\sigma\), let's talk a bit more about \(a\) and \(b\) which pop up in ther RBF kernel.
+
+Looking back at the kernel, can interpret \(b\) as a scale factor determining the **unit length** in the input space. If we make \(b\) smaller, the regression becomes more wiggly. This is because the same absolute norm between two points \(\norm{\vb{x} - \vb{x}'}\) is scaled by a smaller factor, and thus treated as further apart. The model applies less "smoothing" between those points and allows its predictions to be influenced more by the mean \(\mu\) . On the other hand, if \(b\) is increased, the same absolute norm is treated as a shorter distance, resulting in predictions at \(\vb{x}\) and \(\vb{x}'\) to be closer together with more "smoothing".
+
+Additionally, the factor \(a^{2}\) is a scale factor determining the size on the output space one unit of variance.
+
+What strategies can we use to determine these **hyperparameters**? Although this is a well-researched and broad topic, we offer here a brief overview.
+
+### Maximum Likelihood Estimate (MLE)
+One method is to find the values \((\hat \mu, \hat \sigma, \hat a, \hat b)\)  which maximise the *likelihood* of observing the training data \(\vb{y}\) given \(\mathbf{X}\) under the prior:
+\[
+(\hat \mu, \hat \sigma, \hat a, \hat b) &= \underset{\mu, \sigma, a, b}{\operatorname{argmax}} p(\vb{y} \mid \mathbf{X}) \\
+    &= \underset{\mu, \sigma, a, b}{\operatorname{argmax}} \frac{1}{(2\pi)^{\frac{n}{2}}\sqrt{\abs{\mathbf{K}_{1} + \boldsymbol{\Sigma}_{n}}}} \exp\qty(-\frac{1}{2}(\vb{y} - \boldsymbol{\mu})^{T} (\mathbf{K_{1}} + \boldsymbol{\Sigma}_{n})^{-1}(\vb{y} - \boldsymbol{\mu})).
+\]
+
+Maximising this expression involving an exponential and inverse square roots is computationally costly given its nature. Instead, we notice that the logarithm function \(\ln(\cdot)\) is one-to-one, so maximising a function \(g(\vb{x})\) is equivalent to maximising its logarithm \(\ln g(\vb{x})\). 
+\[
+(\hat \mu, \hat \sigma, \hat a, \hat b)  &= \underset{\mu, \sigma, a, b}{\operatorname{argmax}}\ln p(\vb{y} \mid \mathbf{X}) \\
+&= \underset{\mu, \sigma, a, b}{\operatorname{argmax}} \qty{  -\frac{n}{2} \ln 2\pi - \frac{1}{2}\ln\abs{\mathbf{K}_{1} + \boldsymbol{\Sigma}_{n}}-\frac{1}{2}(\vb{y} - \boldsymbol{\mu})^{T}(\mathbf{K}_{1} + \boldsymbol{\Sigma}_{n})^{-1}(\vb{y} - \boldsymbol{\mu})}.
+\]
+
+This technique of maximising the **log-likelihood** of an observation is used quite widely in predictive analytics.
+
+
+
+## Aside: computing the inverse using Cholesky decomposition
+Notice that the expression \((\mathbf{K}_{1} + \boldsymbol{\Sigma}_{n})^{-1}\) comes up quite a few times when predicting values. This matrix inversion can prove costly, especially if the dataset is very large and matrix \(\mathbf{K}_{1}\)'s dimensions become big. To help the computation process, we can use the fact that, since \(\mathbf{K}_{1}\) is a covariance matrix, it is symmetric and positive semidefinite, and since \(\boldsymbol{\Sigma}_{n}\) is a diagonal matrix whose entries are all non-negative, the overall sum is symmetric and postiive definite. This allows us to compute the inverse of the sum using **Cholesky decomposition**.
+
+Theorem (Cholesky decomposition).
+: Given a symmetric positive definite matrix \(\mathbf{A}\), there exists a unique lower-triangular matrix \(\mathbf{L}\) such that
+\[
+\mathbf{L}\mathbf{L}^{T} = \mathbf{A}.
+\]
+
+If \(\mathbf{A}\) is only positive semidefinite, the decomposition still exists but may not be unique. 
+
+Cholesky decomposition is useful for solving equations of the form
+\[
+\mathbf{A}\vb{x} = \vb{b},
+\]
+If we rewrite \(\mathbf{A}\) as \(\mathbf{L}\mathbf{L}^{T}\), this becomes immediately obvious:
+\[
+\mathbf{L}\underbrace{\mathbf{L}^{T} \vb{x}}_{\vb{z}} = \vb{b}.
+\]
+
+Notice that it is computationally very easy to solve the equation \(\mathbf{L}\vb{z} = \vb{b}\) since \(\mathbf{L}\) is lower triangular. Once we know \(\vb{z}\), we can the find \(\vb{x}\) by solving \(\mathbf{L}^{T} \vb{x} = \vb{z}\), which is again very easy.
+
+Since the matrix sum \(K_{1} + \boldsymbol{\Sigma}_{n}\) is symmetric and positive (semi)definite, Cholesky decomposition can come very handy when it comes to computing the expression \((\mathbf{K}_{1} + \boldsymbol{\Sigma}_{n})^{-1}\vb{b}\), where \(\vb{b}\) is a given vector (such as \((\vb{y} - \boldsymbol{\mu})\) or \(\vb{k}^*\) in [#noisy-posterior] ). If we denote the solution to this as \(\vb{w}\), then:
+\[
+(\mathbf{K}_{1} + \boldsymbol{\Sigma}_{n})\vb{w} = \vb{b}.
+\]
+
+By decomposing \((\mathbf{K}_{1} + \boldsymbol{\Sigma}_{n}) \equiv \mathbf{L}\mathbf{L}^{T}\), we first solve the equation \(\mathbf{L}\vb{z} = \vb{b}\), and then solve \(\mathbf{L}^{T}\vb{w} = \vb{z}\).
+
+Gaussian regression performs very poorly for extrapolation, approaching the prior mean very quickly for values far away from the dataset, with the standard deviation approaching the prior \(\sigma\) very quickly.

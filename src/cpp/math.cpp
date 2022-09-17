@@ -6,6 +6,7 @@
 #include <cmath>
 #include <eigen3/Eigen/Dense>
 #include <iostream>
+#include <random>
 
 namespace Math
 {
@@ -45,7 +46,6 @@ namespace Math
     public:
         GR(Eigen::MatrixXd X, Eigen::VectorXd y, double v, double l, double s, double m = -1) : X(X), y(y), v(v), l(l), s(s), m(m == -1 ? y.mean() : m), yDemeaned(y.array() - this->m), K1(kernel(X, X)), S1((std::pow(s, 2.0) + 1e-6) * Eigen::MatrixXd::Identity(X.rows(), X.rows())), K1S1Inv((K1 + S1).inverse()), K1S1InvTimesYDemeaned(K1S1Inv * yDemeaned)
         {
-            std::cout << this->m << std::endl;
         }
 
         std::pair<Eigen::VectorXd, Eigen::MatrixXd> predict(Eigen::MatrixXd Xt)
@@ -60,4 +60,23 @@ namespace Math
             return std::make_pair(posteriorMean, posteriorCovariance);
         }
     };
+
+    Eigen::MatrixXd normalRandomVariable(Eigen::VectorXd const &mean, Eigen::MatrixXd const &covar, const unsigned &numDraws = 1)
+    {
+        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigenSolver(covar + 1e-6 * Eigen::MatrixXd::Identity(covar.rows(), covar.cols()));
+        Eigen::MatrixXd transform = eigenSolver.eigenvectors() * eigenSolver.eigenvalues().cwiseSqrt().asDiagonal();
+
+        static std::mt19937 gen{std::random_device{}()};
+        static std::normal_distribution<> dist;
+
+        Eigen::MatrixXd res{mean.size(), numDraws};
+
+        for (unsigned i = 0; i < numDraws; ++i)
+        {
+            res.col(i) = mean + transform * Eigen::VectorXd{mean.size()}.unaryExpr([&](auto x)
+                                                                                   { return dist(gen); });
+        }
+
+        return res;
+    }
 }
