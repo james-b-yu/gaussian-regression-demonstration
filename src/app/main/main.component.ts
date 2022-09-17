@@ -508,8 +508,6 @@ export class MainComponent implements OnInit, AfterViewInit {
                 showlegend: false
             });
 
-            console.log((i + 1) / (samples[1].cols));
-
         }
 
         const layout: Partial<Layout> = {
@@ -567,8 +565,6 @@ export class MainComponent implements OnInit, AfterViewInit {
         const samples: MatrixObject = MatrixObject.ref(module.getStdGProcess(numFnSamples, this.DEFAULTS.FUNCTION_SAMPLE_RESOLUTION));
 
         const pltData: Data[] = [];
-
-        console.log(samples);
 
 
         for (let i = 0; i < samples.cols; ++i) {
