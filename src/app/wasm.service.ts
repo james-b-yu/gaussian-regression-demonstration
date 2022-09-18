@@ -18,7 +18,7 @@ export class WasmService {
             } else {
                 a.default({
                     locateFile(s: string) {
-                        return `/cpp/${s}`;
+                        return `./cpp/${s}`;
                     }
                 }).then((v: any) => {
                     this.module = v;

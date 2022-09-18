@@ -210,7 +210,7 @@ export class MainComponent implements OnInit, AfterViewInit {
         }, {
             name: "Sigmoid function",
             xRange: [-5, 5],
-            xtRange: [-7.5, 7.5],
+            xtRange: [-10, 10],
             fn: x => 1.0 / (1 + Math.exp(-x)),
         }, {
             name: "Point",
@@ -237,7 +237,7 @@ export class MainComponent implements OnInit, AfterViewInit {
             name: "numSamples",
             label: "Number of samples",
             controlOptions: [this.DEFAULTS.NUM_SAMPLES, [Validators.required]],
-            invalidFeedback: "Required",
+            invalidFeedback: "Must be in the range [1, 50]",
             type: "number",
             numberMin: 1,
             numberStep: 1,
@@ -250,14 +250,14 @@ export class MainComponent implements OnInit, AfterViewInit {
             controlOptions: [this.DEFAULTS.SAMPLE_METHOD, [Validators.required]],
             invalidFeedback: "Required",
             type: "select",
-            selectOptions: ["Evenly spaced", "Random"],
+            selectOptions: ["Systematic", "Random"],
             hidden: !!this.route.snapshot.queryParamMap.get("sample_method_hidden")
         },
         {
             name: "yNoise",
             label: "Sample noise",
             controlOptions: [this.DEFAULTS.YNOISE, [Validators.required]],
-            invalidFeedback: "Required",
+            invalidFeedback: "Must be in the range [0, 5]",
             type: "number",
             defaultCheckbox: {
                 label: "No noise",
@@ -289,9 +289,9 @@ export class MainComponent implements OnInit, AfterViewInit {
         },
         {
             name: "s",
-            label: "Prior dataset noise",
+            label: "Prior noise",
             controlOptions: [this.DEFAULTS.PRIOR_DATASET_NOISE, []],
-            invalidFeedback: "Required",
+            invalidFeedback: "Must be in the range [0, 5]",
             type: "number",
             defaultCheckbox: {
                 label: "Match with sample noise",
@@ -306,9 +306,9 @@ export class MainComponent implements OnInit, AfterViewInit {
         },
         {
             name: "l",
-            label: "Length scale factor",
+            label: "Length scale",
             controlOptions: [this.DEFAULTS.LENGTH_SCALE_FACTOR, Validators.required],
-            invalidFeedback: "Required",
+            invalidFeedback: "Must be in the range [1, 5]",
             type: "number",
             numberMin: 0,
             numberStep: 0.1,
@@ -317,9 +317,9 @@ export class MainComponent implements OnInit, AfterViewInit {
         },
         {
             name: "v",
-            label: "Vertical scale factor",
+            label: "Vertical scale",
             controlOptions: [this.DEFAULTS.VERTICAL_SCALE_FACTOR, Validators.required],
-            invalidFeedback: "Required",
+            invalidFeedback: "Must be in the range [1, 5]",
             type: "number",
             numberMin: 0,
             numberStep: 0.1,
@@ -331,10 +331,10 @@ export class MainComponent implements OnInit, AfterViewInit {
     protected redrawSamplesFormInput: FormField[] = [
         {
             name: "numFnSamples",
-            label: "Number of samples",
+            label: "Samples",
             controlOptions: [this.DEFAULTS.NUM_FN_SAMPLES, [Validators.required]],
             type: "number",
-            invalidFeedback: "Required",
+            invalidFeedback: "Must be in the range [1, 50]",
             numberMin: 1,
             numberMax: 50,
             numberStep: 1
@@ -344,10 +344,10 @@ export class MainComponent implements OnInit, AfterViewInit {
     protected redrawStdGPSamplesFormInput: FormField[] = [
         {
             name: "numFnSamples",
-            label: "Number of samples",
+            label: "Samples",
             controlOptions: [this.DEFAULTS.NUM_STD_GP_SAMPLES, [Validators.required]],
             type: "number",
-            invalidFeedback: "Required",
+            invalidFeedback: "Must be in the range [1, 50]",
             numberMin: 1,
             numberMax: 50,
             numberStep: 1

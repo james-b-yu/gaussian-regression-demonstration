@@ -1,27 +1,29 @@
-# Gr
+# Gaussian regression
+Navigate to `localhost:4200/#/main` to see the demonstration.
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 14.1.3.
+# Query Param options
+Set these options to 1 to hide specific parts of the demonstration. You'll probably want to set `std_gp_hidden` to hide the example of a noisy Gaussian process.
 
-## Development server
+main_graph_hidden
+form_hidden
+display_samples_hidden
+std_gp_hidden
+fn_n_hidden
+num_samples_hidden
+sample_method_hidden
+y_noise_hidden
+prior_mean_hidden
+prior_std_hidden
+length_scale_factor_hidden
+vertical_scale_factor_hidden
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
 
-## Code scaffolding
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
-
-## Build
-
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
-
-## Running unit tests
-
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+fn_n
+num_samples
+num_fn_samples
+num_std_gp_samples
+sample_method
+y_noise
+length_scale_factor
+vertical_scale_factor
