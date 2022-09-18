@@ -1,4 +1,10 @@
 # Gaussian regression
+An interactive demonstration showing the impact of hyperparameters on Gaussian regression.
+
+<img width="600" alt="image" src="https://user-images.githubusercontent.com/31538456/190895562-fee1b332-4d5b-482e-94cd-227d98bb2d3a.png">
+
+This demonstration features on my article on [thriftyeconomics.com](https://www.thriftyeconomics.com/article/gaussian-regression)
+
 Navigate to `localhost:4200/#/main` to see the demonstration.
 
 # Query Param options
