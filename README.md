@@ -15,7 +15,7 @@ y_noise_hidden\
 prior_mean_hidden\
 prior_std_hidden\
 length_scale_factor_hidden\
-vertical_scale_factor_hidden\
+vertical_scale_factor_hidden
 
 
 
@@ -26,4 +26,4 @@ num_std_gp_samples\
 sample_method\
 y_noise\
 length_scale_factor\
-vertical_scale_factor\
+vertical_scale_factor
